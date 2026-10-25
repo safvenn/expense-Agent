@@ -2,7 +2,6 @@ from pydantic import BaseModel
 from app.schemas.expenses_schema import expense_schema
 
 class ApprovalRequest(BaseModel):
-    thread_id: str = "default"
     interrupt_id: str | None = None
     approve: bool = True
     message: str | None = None

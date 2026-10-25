@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Expenses · Expense Assistant</title>
+  <link rel="stylesheet" href="/style.css?v=auth-2">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/"><span class="brand-icon">e.</span> expense<span class="brand-dot">.</span></a>
+  <p class="nav-label">WORKSPACE</p>
+  <nav aria-label="Main navigation">
+    <a class="nav-item" href="/"><span aria-hidden="true">◫</span> Chat</a>
+    <a class="nav-item active" href="/expenses.html" aria-current="page"><span aria-hidden="true">☷</span> Expenses <span class="nav-arrow" aria-hidden="true">↗</span></a>
+  </nav>
+  <div class="sidebar-note">
+    <span class="small-icon" aria-hidden="true">✧</span>
+    <strong>A little less admin.</strong>
+    <p>Keep track of your everyday spending, one conversation at a time.</p>
+  </div>
+  <div class="profile" hidden>
+    <span class="avatar"></span>
+    <div>
+      <strong></strong>
+      <small></small>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div><span class="breadcrumb">Workspace <span>/</span></span> Expenses</div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="preview-badge">Connecting…</span>
+      <div id="topbar-auth" class="auth-bar"></div>
+    </div>
+  </header>
+
+  <details class="connection-settings">
+    <summary>API connection</summary>
+    <form id="connection-form">
+      <label for="api-url">Backend URL</label>
+      <input id="api-url" type="url" required placeholder="http://localhost:8000">
+      <button class="button secondary" type="submit">Connect</button>
+    </form>
+    <p id="connection-status" role="status">Checking connection…</p>
+  </details>
+  <noscript><p>Enable JavaScript to connect to your expense API.</p></noscript>
+
+  <div class="expenses-content">
+    <section class="page-heading expense-heading">
+      <div>
+        <p class="eyebrow">A CLEARER PICTURE</p>
+        <h1>Your expenses, all in one place.</h1>
+        <p>The little things add up. Keep them in view.</p>
+      </div>
+      <a class="button primary" href="/">+ Add in chat</a>
+    </section>
+
+    <div class="sample-notice" id="expenses-status" role="status">Loading expenses…</div>
+
+    <section class="stats" aria-label="Expense summary" id="expense-stats"></section>
+
+    <section class="expense-panel" aria-labelledby="list-title">
+      <div class="panel-heading">
+        <div>
+          <h2 id="list-title">All expenses <span class="count" id="expense-count">0</span></h2>
+          <p>Your recorded spending from the backend database.</p>
+        </div>
+        <button class="button secondary" id="refresh-expenses" type="button">Refresh</button>
+      </div>
+      <div class="table-scroll" role="region" aria-label="Expense list" tabindex="0">
+        <table>
+          <caption class="sr-only">Recorded expenses</caption>
+          <thead>
+            <tr>
+              <th scope="col">Expense</th>
+              <th scope="col">Category</th>
+              <th scope="col">Date / ID</th>
+              <th scope="col" class="numeric">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="expense-rows"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" id="expense-footer">All recorded expenses</td>
+              <td class="numeric" id="expense-total">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <p class="list-caption">Want to add an expense? <a href="/">Start with a conversation <span aria-hidden="true">↗</span></a></p>
+  </div>
+</main>
+
+<script src="/response.js"></script>
+<script src="/app.js?v=auth-2"></script>
+</body>
+</html>

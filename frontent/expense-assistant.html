@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat · Expense Assistant</title>
+  <link rel="stylesheet" href="/style.css?v=auth-2">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/"><span class="brand-icon">e.</span> expense<span class="brand-dot">.</span></a>
+  <p class="nav-label">WORKSPACE</p>
+  <nav aria-label="Main navigation">
+    <a class="nav-item active" href="/" aria-current="page"><span aria-hidden="true">◫</span> Chat <span class="nav-arrow" aria-hidden="true">↗</span></a>
+    <a class="nav-item" href="/expenses.html"><span aria-hidden="true">☷</span> Expenses</a>
+  </nav>
+  <div class="sidebar-note">
+    <span class="small-icon" aria-hidden="true">✧</span>
+    <strong>AI Expense Copilot</strong>
+    <p>Track your everyday spending through natural conversations.</p>
+  </div>
+  <div class="profile" hidden>
+    <span class="avatar"></span>
+    <div>
+      <strong></strong>
+      <small></small>
+    </div>
+  </div>
+</aside>
+
+<main class="main chat-main">
+  <header class="topbar">
+    <div><span class="breadcrumb">Workspace <span>/</span></span> Chat</div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="preview-badge">Connecting…</span>
+      <div id="topbar-auth" class="auth-bar"></div>
+    </div>
+  </header>
+
+  <details class="connection-settings">
+    <summary>API connection</summary>
+    <form id="connection-form">
+      <label for="api-url">Backend URL</label>
+      <input id="api-url" type="url" required placeholder="http://localhost:8000">
+      <button class="button secondary" type="submit">Connect</button>
+    </form>
+    <p id="connection-status" role="status">Checking connection…</p>
+  </details>
+  <noscript><p>Enable JavaScript to connect to your expense API.</p></noscript>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">INTELLIGENT MONEY TRACKER</p>
+      <h1>A simpler way to track expenses.</h1>
+      <p>Log expenses, review transactions, and see spending breakdowns with ease.</p>
+    </div>
+    <span class="heading-symbol" aria-hidden="true">✳</span>
+  </section>
+
+  <section class="conversation" aria-label="Conversation" aria-live="polite" id="conversation"></section>
+
+  <div class="composer-area">
+    <form class="composer" id="chat-form">
+      <label class="sr-only" for="message">Message the expense assistant</label>
+      <textarea id="message" rows="1" placeholder="Tell me about an expense (e.g. 'Spent ₹250 on Biriyani for lunch')..."></textarea>
+      <div class="composer-bottom">
+        <span>Press Enter to send · Shift + Enter for a new line</span>
+        <button class="send-button" type="submit" aria-label="Send message" title="Send message">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+          </svg>
+        </button>
+      </div>
+    </form>
+    <p id="chat-status" class="composer-caption" role="status"></p>
+  </div>
+</main>
+
+<script src="/response.js"></script>
+<script src="/app.js?v=auth-2"></script>
+</body>
+</html>

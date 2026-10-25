@@ -1,26 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Chat · Expense assistant</title><link rel="stylesheet" href="styles.css"></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat · Expense Assistant</title>
+  <link rel="stylesheet" href="/style.css?v=auth-2">
+</head>
 <body>
 <aside class="sidebar">
-<a class="brand" href="index.html"><span class="brand-icon">e.</span> expense<span class="brand-dot">.</span></a>
-<p class="nav-label">WORKSPACE</p>
-<nav aria-label="Main navigation"><a class="nav-item active" href="index.html" aria-current="page"><span aria-hidden="true">◫</span> Chat <span class="nav-arrow" aria-hidden="true">↗</span></a><a class="nav-item" href="expenses.html"><span aria-hidden="true">☷</span> Expenses</a></nav>
-<div class="sidebar-note"><span class="small-icon" aria-hidden="true">✧</span><strong>A little less admin.</strong><p>Keep track of your everyday spending, one conversation at a time.</p></div>
-<div class="profile"><span class="avatar">Y</span><div><strong>Your workspace</strong><small>Personal expenses</small></div></div>
+  <a class="brand" href="/"><span class="brand-icon">e.</span> expense<span class="brand-dot">.</span></a>
+  <p class="nav-label">WORKSPACE</p>
+  <nav aria-label="Main navigation">
+    <a class="nav-item active" href="/" aria-current="page"><span aria-hidden="true">◫</span> Chat <span class="nav-arrow" aria-hidden="true">↗</span></a>
+    <a class="nav-item" href="/expenses.html"><span aria-hidden="true">☷</span> Expenses</a>
+  </nav>
+  <div class="sidebar-note">
+    <span class="small-icon" aria-hidden="true">✧</span>
+    <strong>AI Expense Copilot</strong>
+    <p>Track your everyday spending through natural conversations.</p>
+  </div>
+  <div class="profile" hidden>
+    <span class="avatar"></span>
+    <div>
+      <strong></strong>
+      <small></small>
+    </div>
+  </div>
 </aside>
+
 <main class="main chat-main">
-<header class="topbar"><div><span class="breadcrumb">Workspace <span>/</span></span> Chat</div><span class="preview-badge">Frontend preview</span></header>
-<section class="page-heading"><div><p class="eyebrow">YOUR EVERYDAY MONEY COMPANION</p><h1>A simpler way to track expenses.</h1><p>Add an expense, find a transaction, or see where your money goes.</p></div><span class="heading-symbol" aria-hidden="true">✳</span></section>
-<section class="conversation" aria-label="Example conversation">
-<div class="day-divider"><span>Example conversation</span></div>
-<article class="message user-message"><div class="bubble">Add ₹450 for lunch at Green Bowl today.</div><span class="message-meta">You · 12:42 PM</span></article>
-<article class="message assistant-message"><span class="assistant-avatar" aria-hidden="true">✳</span><div class="message-content"><div class="assistant-name">Expense assistant</div><p>I’ve prepared your expense. Please review the details before it’s added.</p>
-<section class="approval-card" aria-labelledby="approval-title"><div class="approval-header"><span class="approval-icon" aria-hidden="true">⌁</span><div><h2 id="approval-title">Approve this expense</h2><p>The agent is paused and waiting for your approval.</p></div><span class="status waiting">Needs approval</span></div>
-<dl class="expense-details"><div><dt>Description</dt><dd>Lunch at Green Bowl</dd></div><div><dt>Amount</dt><dd class="amount">₹450.00</dd></div><div><dt>Category</dt><dd>Food & drinks</dd></div><div><dt>Date</dt><dd>23 Oct 2026</dd></div></dl>
-<details class="tool-details"><summary>View tool details</summary><p>Tool: <code>add_expense</code> · Example action</p><p>Approval allows the agent to add the expense shown above.</p></details>
-<div class="approval-actions"><input class="choice-input" type="radio" name="approval" id="approve"><label class="button primary" for="approve">✓ Approve tool</label><input class="choice-input" type="radio" name="approval" id="reject"><label class="button secondary" for="reject">Reject</label><span class="approval-hint">You’re in control.</span><p class="approval-result approved" role="status">Approval selected in this preview. No expense has been saved.</p><p class="approval-result rejected" role="status">Rejection selected in this preview. No action has been taken.</p></div>
-</section><span class="message-meta">12:42 PM</span></div></article>
-</section>
-<div class="composer-area"><div class="composer"><label class="sr-only" for="message">Message the expense assistant</label><textarea id="message" rows="2" placeholder="Tell me about an expense…"></textarea><div class="composer-bottom"><span>Simple tracking. Clear decisions.</span><button class="send-button" type="button" disabled aria-label="Send message unavailable in frontend preview" title="Backend connection required">↑</button></div></div><p class="composer-caption">HTML & CSS preview · Sending messages and agent actions require a backend connection.</p></div>
-</main></body></html>
+  <header class="topbar">
+    <div><span class="breadcrumb">Workspace <span>/</span></span> Chat</div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="preview-badge">Connecting…</span>
+      <div id="topbar-auth" class="auth-bar"></div>
+    </div>
+  </header>
+
+  <details class="connection-settings">
+    <summary>API connection</summary>
+    <form id="connection-form">
+      <label for="api-url">Backend URL</label>
+      <input id="api-url" type="url" required placeholder="http://localhost:8000">
+      <button class="button secondary" type="submit">Connect</button>
+    </form>
+    <p id="connection-status" role="status">Checking connection…</p>
+  </details>
+  <noscript><p>Enable JavaScript to connect to your expense API.</p></noscript>
+
+  <section class="page-heading">
+    <div>
+      <p class="eyebrow">INTELLIGENT MONEY TRACKER</p>
+      <h1>A simpler way to track expenses.</h1>
+      <p>Log expenses, review transactions, and see spending breakdowns with ease.</p>
+    </div>
+    <span class="heading-symbol" aria-hidden="true">✳</span>
+  </section>
+
+  <section class="conversation" aria-label="Conversation" aria-live="polite" id="conversation"></section>
+
+  <div class="composer-area">
+    <form class="composer" id="chat-form">
+      <label class="sr-only" for="message">Message the expense assistant</label>
+      <textarea id="message" rows="1" placeholder="Tell me about an expense (e.g. 'Spent ₹250 on Biriyani for lunch')..."></textarea>
+      <div class="composer-bottom">
+        <span>Press Enter to send · Shift + Enter for a new line</span>
+        <button class="send-button" type="submit" aria-label="Send message" title="Send message">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+          </svg>
+        </button>
+      </div>
+    </form>
+    <p id="chat-status" class="composer-caption" role="status"></p>
+  </div>
+</main>
+
+<script src="/response.js"></script>
+<script src="/app.js?v=auth-2"></script>
+</body>
+</html>

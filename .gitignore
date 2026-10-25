@@ -8,3 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+# Secrets and deployment metadata
+.env
+.env.*
+!.env.example
+.vercel/
