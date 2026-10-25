@@ -4,9 +4,9 @@
 
 Expense Assistant combines a FastAPI backend, a LangChain agent, and a lightweight web interface to help you record, review, update, and delete expenses in natural language. PostgreSQL stores account data, expenses, chat history, and agent checkpoints.
 
-[Getting started](#getting-started) · [Architecture](#architecture) · [API reference](#api-reference) · [Development](#development) · [Deployment](#deployment)
+[Getting started](#getting-started) · [Architecture](#architecture) · [API reference](#api-reference)
 
-> **Status:** Active development. Local setup requires PostgreSQL and a compatible model service. See [Current limitations](#current-limitations) before deploying.
+> **Status:** Active development. Local setup requires PostgreSQL and a compatible model service.
 
 ## Features
 
@@ -214,48 +214,6 @@ Always send `approve` explicitly; its schema default is `true`. The current serv
 ├── vercel.json                 # Static frontend deployment configuration
 └── DEPLOYMENT.md               # Deployment preparation notes
 ```
-
-## Development
-
-Run the frontend regression suite and JavaScript syntax check from the repository root:
-
-```sh
-node --test frontent/auth.test.cjs frontent/history.test.cjs frontent/response.test.cjs
-node --check frontent/app.js
-```
-
-The tests cover authentication handling, response normalization, approval recovery, history pagination, and reply ordering using mocks and isolated JavaScript contexts. They do not validate a live model or database. The backend test file is currently a placeholder.
-
-For an integration check, register and sign in, send a message, approve a test expense, reload history, and confirm the record appears on the Expenses page.
-
-## Deployment
-
-The repository includes `render.yaml` for a Python backend and `vercel.json` for a static frontend. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for preparation notes. These configuration files do not establish a live deployment.
-
-Before deploying, configure a reachable PostgreSQL database, replace the localhost model endpoint with a service reachable from the backend, initialize application tables, and set the frontend API connection to the backend's HTTPS URL. Review the limitations below and verify the complete authentication, chat, approval, and history flow.
-
-The deployment notes contain an outdated plaintext-password warning: the current signup code hashes passwords with Argon2. Older plaintext records still require migration or account reset.
-
-## Current limitations
-
-- **Batch approvals:** A single approval or rejection applies to the pending batch; individual decisions within a batch are not supported.
-- **Checkpoint execution:** The app configures `AsyncPostgresSaver`, but chat and approval services use synchronous agent methods. Live integration may require conversion to matching asynchronous methods.
-- **Database migrations:** No migration workflow is included. Model changes require explicit migrations for existing tables, including message-content changes to JSON.
-- **Development defaults:** CORS is permissive, SQL logging is enabled, and the model endpoint is local. Review these settings before public use.
-- **Authentication storage:** Browser tokens are accessible to JavaScript. Older plaintext password records cannot use the current hash-verification flow without migration or reset.
-
-## Troubleshooting
-
-| Problem | Check |
-| --- | --- |
-| Application fails to start | Confirm `.env` values, database connectivity, and table-creation permissions. |
-| Signup reports a missing table | Run the application-table initialization command against the configured database. |
-| Chat fails or times out | Verify the model endpoint, tool-calling support, and async checkpoint compatibility. |
-| API requests reach the wrong server | Check the frontend's saved API connection setting. |
-| Requests return HTTP 401 | Sign in again if token refresh fails or the refresh token has expired. |
-| Database errors after a model change | Migrate existing tables; `create_all()` does not alter existing columns. |
-
-After a timeout with an uncertain write outcome, inspect saved expenses before repeating the action to avoid duplicates.
 
 ## Contributing
 
