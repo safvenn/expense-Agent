@@ -33,6 +33,8 @@
   const fresh = () => ({ thread: 'web-' + crypto.randomUUID(), messages: [], pending: null, uncertain: false });
   if (!state || !Array.isArray(state.messages) || !state.thread) state = fresh();
   let busy = false;
+  let authPending = false;
+  let authReturnFocus;
   let microphoneStatus = '';
   let speechRecognition = null;
   let historyVersion = 0;
@@ -872,8 +874,6 @@
   }
 
   /* ---------------- Authentication Modal & UI ---------------- */
-  let authPending = false;
-  let authReturnFocus;
   function extractError(data, fallback = 'Operation failed') {
     if (typeof data?.detail === 'string') return data.detail;
     if (Array.isArray(data?.detail)) return data.detail.map(item => item.msg).join('; ');
