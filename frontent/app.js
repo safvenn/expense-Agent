@@ -1010,5 +1010,5 @@
     updateAuthUI();
     if (!sameSession) { loadExpenses(); loadMessages(); }
   });
-  buildAuthModal(); updateAuthUI(); checkConnection(); loadExpenses(); loadMessages();
+  buildAuthModal(); updateAuthUI(); renderChat(); checkConnection(); loadExpenses(); loadMessages();
 })();

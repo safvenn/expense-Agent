@@ -3,5 +3,10 @@
   "framework": null,
   "buildCommand": "",
   "installCommand": "",
-  "outputDirectory": "frontent"
+  "outputDirectory": "frontent",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/style.css", "destination": "/styles.css" },
+    { "source": "/expenses", "destination": "/expenses.html" }
+  ]
 }
