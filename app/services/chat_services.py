@@ -1,7 +1,8 @@
 
 import datetime
-
-from fastapi import Depends
+import tempfile
+import os
+from fastapi import Depends, File, HTTPException, UploadFile
 from sqlmodel import Session
 
 from app.dependencies.db import get_db
@@ -12,6 +13,8 @@ from langgraph.types import Command
 from app.models.messages_model import MessageModel
 from app.reposetory.chat_repo import chat_repo
 
+import speech_recognition as sr
+from pydub import AudioSegment
 
 def chat_services(user_prompt:str,thread_id:str,agent,db):
     
@@ -48,3 +51,35 @@ def chat_services(user_prompt:str,thread_id:str,agent,db):
     return {
         "content": content
     }
+    
+    
+    
+recognizer = sr.Recognizer()
+
+
+def spech_to_text_service(audio: UploadFile = File(...)):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp:
+        temp_file_path = temp.name
+        
+    try: 
+         sound = AudioSegment.from_file(audio.file)
+         sound.export(temp_file_path, format="wav")
+       
+         with sr.AudioFile(temp_file_path) as source:
+            audio_data = recognizer.record(source)
+         text = recognizer.recognize_google(audio_data)
+         
+         return text
+    except sr.UnknownValueError:
+        raise HTTPException(status_code=400, detail="Could not understand the audio.")
+    except sr.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"Could not request results from Google Speech Recognition service; {e}")
+    
+    finally:
+        
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        
+        
+        
+    

@@ -27,6 +27,19 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "uvicorn>=0.54.0",
     "pwdlib[argon2]>=0.3.1",
+    "faster-whisper>=1.2.1",
+    "sounddevice>=0.5.6",
+    "grok>=6.2",
+    "groq>=0.37.1",
+    "speechrecognition>=3.17.0",
+    "pyaudio>=0.2.14",
+    "pydub>=0.25.1",
+    "pandas>=3.1.1",
+    "numpy>=2.5.4",
+    "matplotlib>=3.11.2",
+    "scikit-learn>=1.9.1",
+    "opencv-python>=5.0.0.93",
+    "scikit-image>=0.26.0",
 ]
 
 [project.scripts]
@@ -35,3 +48,24 @@ lanchain-project-1 = "lanchain_project_1:main"
 [build-system]
 requires = ["uv_build>=0.13.4,<0.14.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+    "ruff>=0.17.4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

@@ -8,8 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+# Frontend/build output and caches
+output/
+node_modules/
 # Secrets and deployment metadata
 .env
 .env.*
 !.env.example
 .vercel/
+.vscode/

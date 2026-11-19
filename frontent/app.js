@@ -19,12 +19,17 @@
     } catch { /* Keep the current session usable if storage is unavailable. */ }
   }
   let auth = readAuth();
-  const defaultBase = /^https?:$/.test(window.location.protocol) ? window.location.origin : 'http://localhost:8000';
+  const isVercel = typeof window !== 'undefined' && window.location.hostname.endsWith('vercel.app');
+  const defaultBase = isVercel
+    ? 'https://expense-assistant-api.onrender.com'
+    : (/^https?:$/.test(window.location.protocol) ? window.location.origin : 'http://localhost:8000');
   let base = read('expense-api', defaultBase);
   let state = read('expense-chat', null);
   const fresh = () => ({ thread: 'web-' + crypto.randomUUID(), messages: [], pending: null, uncertain: false });
   if (!state || !Array.isArray(state.messages) || !state.thread) state = fresh();
   let busy = false;
+  let microphoneStatus = '';
+  let speechRecognition = null;
   let historyVersion = 0;
   let historyNotice = "";
   const persist = () => save('expense-chat', state);
@@ -473,6 +478,7 @@
 
     if ($('#message')) $('#message').disabled = busy || !!state.pending || state.uncertain;
     if ($('.send-button')) $('.send-button').disabled = busy || !!state.pending || state.uncertain;
+    if ($('#mic-button')) $('#mic-button').disabled = busy || !!state.pending || state.uncertain || !speechRecognition;
     if ($('#chat-status')) {
       $('#chat-status').textContent = busy
         ? 'Waiting for the assistant…'
@@ -480,7 +486,7 @@
         ? 'Request outcome unknown. Check Expenses before retrying. Nothing will be retried automatically.'
         : state.pending
         ? 'Review the pending action to continue.'
-        : 'Enter to send · Shift + Enter for a new line';
+        : microphoneStatus || 'Enter to send · Shift + Enter for a new line';
     }
     if (historyNotice && $('#chat-status')) $('#chat-status').textContent += ' · ' + historyNotice;
     if ($('#connection-form button')) $('#connection-form button').disabled = busy;
@@ -549,6 +555,76 @@
       autoResizeTextarea($('#message'));
       await mutate('/chat?' + new URLSearchParams({ prompt }), { method: 'POST' });
     });
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      speechRecognition = new SpeechRecognition();
+      speechRecognition.lang = 'en-IN';
+      speechRecognition.continuous = false;
+      speechRecognition.interimResults = true;
+      speechRecognition.maxAlternatives = 1;
+
+      let recognitionBase = '';
+      speechRecognition.addEventListener('start', () => {
+        recognitionBase = $('#message').value.trim();
+        const micButton = $('#mic-button');
+        micButton?.classList.add('listening');
+        micButton?.setAttribute('aria-pressed', 'true');
+        micButton?.setAttribute('aria-label', 'Stop microphone input');
+        microphoneStatus = 'Listening… speak your expense.';
+        renderChat();
+      });
+      speechRecognition.addEventListener('result', event => {
+        let interim = '';
+        let finalText = '';
+        for (let index = event.resultIndex; index < event.results.length; index++) {
+          const transcript = event.results[index][0].transcript.trim();
+          if (event.results[index].isFinal) finalText += transcript + ' ';
+          else interim += transcript;
+        }
+        const additions = [finalText, interim].filter(Boolean).join(' ').trim();
+        const input = $('#message');
+        if (input) {
+          input.value = recognitionBase ? recognitionBase + (additions ? ' ' + additions : '') : additions;
+          autoResizeTextarea(input);
+        }
+      });
+      speechRecognition.addEventListener('end', () => {
+        const micButton = $('#mic-button');
+        micButton?.classList.remove('listening');
+        micButton?.setAttribute('aria-pressed', 'false');
+        micButton?.setAttribute('aria-label', 'Start microphone input');
+        microphoneStatus = '';
+        renderChat();
+      });
+      speechRecognition.addEventListener('error', event => {
+        microphoneStatus = event.error === 'not-allowed'
+          ? 'Microphone access was blocked. Allow microphone access in your browser.'
+          : event.error === 'no-speech'
+          ? 'No speech detected. Try again.'
+          : `Microphone error: ${event.error}`;
+        renderChat();
+      });
+
+      $('#mic-button')?.addEventListener('click', () => {
+        const micButton = $('#mic-button');
+        if (micButton?.classList.contains('listening')) {
+          speechRecognition.stop();
+        } else if (!busy && !state.pending && !state.uncertain) {
+          try {
+            speechRecognition.start();
+          } catch {
+            microphoneStatus = 'Microphone is already starting. Please wait.';
+            renderChat();
+          }
+        }
+      });
+    } else {
+      $('#mic-button')?.setAttribute('disabled', '');
+      $('#mic-button')?.setAttribute('title', 'Speech recognition is not supported in this browser');
+      microphoneStatus = 'Microphone input is not supported by this browser.';
+    }
+
     $('#message').addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
         event.preventDefault();

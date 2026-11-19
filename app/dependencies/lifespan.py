@@ -26,9 +26,9 @@ async def lifespan(app: FastAPI):
   async with AsyncPostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
     await checkpointer.setup()
     model = ChatOpenAI(
-        model='auto',
+        model=os.getenv("OPENAI_MODEL", "auto"),
         api_key=os.getenv("OPENAI_API_KEY"),
-        base_url= "http://localhost:20128/v1"
+        base_url=os.getenv("OPENAI_BASE_URL", "http://localhost:20128/v1")
     )
     agent = create_agent(
         model=model,
