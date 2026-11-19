@@ -183,9 +183,7 @@ and conversational. Never deviate from this purpose.
         ),
         HumanInTheLoopMiddleware(
           interrupt_on={
-            "add_expense": {
-              "allowed_decisions": ["approve", "reject"]
-            },
+            "add_expense": False,
             "edit_expense": {
               "allowed_decisions": ["approve", "reject"]
             },
