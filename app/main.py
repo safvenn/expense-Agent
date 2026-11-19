@@ -7,9 +7,10 @@ from fastapi.responses import FileResponse
 from sqlalchemy import create_engine
 from sqlmodel import SQLModel, Session,select
 from app.dependencies.auth import current_user
-from app.dependencies.db import Base, get_db
+from app.dependencies.db import Base, engine, get_db
 from app.models.expenses_model import ExpenseModel
 from app.models.users_model import UsersModel
+from app.models.messages_model import MessageModel
 from app.routers.messages_router import router as messages_router
 from app.routers.chat_routers import router as chat_router
 
@@ -23,7 +24,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(title="Gen AI Assistant API", lifespan=lifespan)
