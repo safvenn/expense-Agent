@@ -19,11 +19,16 @@
     } catch { /* Keep the current session usable if storage is unavailable. */ }
   }
   let auth = readAuth();
-  const isVercel = typeof window !== 'undefined' && window.location.hostname.endsWith('vercel.app');
+  const isVercel = typeof window !== 'undefined' &&
+    (window.location.hostname === 'vercel.app' || window.location.hostname.endsWith('.vercel.app'));
   const defaultBase = isVercel
     ? 'https://expense-assistant-api-3dbt.onrender.com'
     : (/^https?:$/.test(window.location.protocol) ? window.location.origin : 'http://localhost:8000');
   let base = read('expense-api', defaultBase);
+  if (isVercel && (!base || typeof base !== 'string' || base === 'https://expense-assistant-api.onrender.com' || base.includes('localhost'))) {
+    base = defaultBase;
+    save('expense-api', base);
+  }
   let state = read('expense-chat', null);
   const fresh = () => ({ thread: 'web-' + crypto.randomUUID(), messages: [], pending: null, uncertain: false });
   if (!state || !Array.isArray(state.messages) || !state.thread) state = fresh();
@@ -69,12 +74,13 @@
       headers['Authorization'] = `Bearer ${auth.access_token}`;
     }
 
+    const timeoutMs = options.timeout ?? (path === '/Health' ? 8000 : 60000);
     let response;
     try {
-      response = await fetch(base + path, { ...options, headers, signal: AbortSignal.timeout(120000) });
+      response = await fetch(base + path, { ...options, headers, signal: AbortSignal.timeout(timeoutMs) });
     } catch (error) {
       if (error.name === 'TimeoutError' || error.name === 'AbortError') {
-        throw new Error('The API did not respond within 2 minutes. The action may still be running.');
+        throw new Error(path === '/Health' ? 'The API health check timed out. Render free instance may still be spinning up.' : 'The API did not respond within 60 seconds. The action may still be running.');
       }
       throw new Error('The browser could not read the response from ' + base + path.split('?')[0] + '. This can mean a connection failure or a server error without CORS headers. Check the backend terminal for the request error.');
     }
@@ -118,6 +124,13 @@
       const error = new Error(`API request failed (HTTP ${response.status}): ${detail}`);
       error.status = response.status;
       throw error;
+    }
+
+    if ($('.preview-badge') && $('.preview-badge').textContent !== 'API connected') {
+      $('.preview-badge').textContent = 'API connected';
+    }
+    if ($('#connection-status') && !$('#connection-status').textContent.startsWith('Connected to')) {
+      $('#connection-status').textContent = 'Connected to ' + base;
     }
 
     try {
@@ -480,16 +493,31 @@
     if ($('.send-button')) $('.send-button').disabled = busy || !!state.pending || state.uncertain;
     if ($('#mic-button')) $('#mic-button').disabled = busy || !!state.pending || state.uncertain || !speechRecognition;
     if ($('#chat-status')) {
-      $('#chat-status').textContent = busy
-        ? 'Waiting for the assistant…'
-        : state.uncertain
-        ? 'Request outcome unknown. Check Expenses before retrying. Nothing will be retried automatically.'
-        : state.pending
-        ? 'Review the pending action to continue.'
-        : microphoneStatus || 'Enter to send · Shift + Enter for a new line';
+      $('#chat-status').replaceChildren();
+      if (busy) {
+        $('#chat-status').textContent = 'Waiting for the assistant…';
+      } else if (state.uncertain) {
+        const text = node('span', 'Request outcome unknown. Check Expenses before retrying.');
+        const unlockBtn = node('button', 'Unlock chat', 'button secondary small');
+        unlockBtn.type = 'button';
+        unlockBtn.style.marginLeft = '8px';
+        unlockBtn.style.padding = '2px 8px';
+        unlockBtn.addEventListener('click', () => {
+          state.uncertain = false;
+          persist();
+          renderChat();
+          $('#message')?.focus();
+        });
+        $('#chat-status').append(text, unlockBtn);
+      } else if (state.pending) {
+        $('#chat-status').textContent = 'Review the pending action to continue.';
+      } else {
+        let text = microphoneStatus || 'Enter to send · Shift + Enter for a new line';
+        if (historyNotice) text += ' · ' + historyNotice;
+        $('#chat-status').textContent = text;
+      }
     }
-    if (historyNotice && $('#chat-status')) $('#chat-status').textContent += ' · ' + historyNotice;
-    if ($('#connection-form button')) $('#connection-form button').disabled = busy;
+    if ($('#connection-form button')) $('#connection-form button').disabled = authPending;
 
     requestAnimationFrame(() => {
       host.scrollTop = host.scrollHeight;
@@ -503,7 +531,10 @@
   }
 
   async function mutate(path, options) {
-    historyVersion++;
+    const version = ++historyVersion;
+    const targetBase = base;
+    const targetState = state;
+    const current = () => version === historyVersion && base === targetBase && state === targetState;
     busy = true;
     state.uncertain = true;
     state.diagnostic = null;
@@ -511,10 +542,12 @@
     renderChat();
     try {
       const data = await api(path, options);
+      if (!current()) return;
       state.diagnostic = { endpoint: path.split('?')[0], api: base, response: data };
       accept(data);
       renderChat();
     } catch (error) {
+      if (!current()) return;
       if (state.diagnostic) state.diagnostic.error = String(error.message);
       const rejectedBeforeExecution = [401, 403, 422].includes(error.status);
       if (rejectedBeforeExecution) state.uncertain = false;
@@ -526,7 +559,7 @@
     } finally {
       await loadMessages();
       busy = false;
-      renderChat();
+      if (current()) renderChat();
     }
   }
 
@@ -980,7 +1013,9 @@
   if ($('#api-url')) {
     $('#api-url').value = base;
     $('#connection-form').addEventListener('submit', async event => {
-      event.preventDefault(); if (busy || authPending) return;
+      event.preventDefault();
+      if (authPending) return;
+      busy = false;
       let url;
       try {
         url = new URL($('#api-url').value.trim());
