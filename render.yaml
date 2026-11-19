@@ -8,7 +8,6 @@ services:
     name: expense-assistant-api
     runtime: python
     plan: free
-    region: singapore
     buildCommand: pip install uv && uv sync --frozen
     startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /Health
@@ -16,7 +15,7 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: expense-assistant-db
-          property: connectionString
+          property: externalConnectionString
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_BASE_URL
