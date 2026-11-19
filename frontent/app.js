@@ -21,7 +21,7 @@
   let auth = readAuth();
   const isVercel = typeof window !== 'undefined' && window.location.hostname.endsWith('vercel.app');
   const defaultBase = isVercel
-    ? 'https://expense-assistant-api.onrender.com'
+    ? 'https://expense-assistant-api-3dbt.onrender.com'
     : (/^https?:$/.test(window.location.protocol) ? window.location.origin : 'http://localhost:8000');
   let base = read('expense-api', defaultBase);
   let state = read('expense-chat', null);

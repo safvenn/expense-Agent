@@ -32,7 +32,6 @@ dependencies = [
     "grok>=6.2",
     "groq>=0.37.1",
     "speechrecognition>=3.17.0",
-    "pyaudio>=0.2.14",
     "pydub>=0.25.1",
     "pandas>=3.1.1",
     "numpy>=2.5.4",
