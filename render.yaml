@@ -1,3 +1,8 @@
+databases:
+  - name: expense-assistant-db
+    plan: free
+    region: singapore
+
 services:
   - type: web
     name: expense-assistant-api
@@ -8,7 +13,9 @@ services:
     healthCheckPath: /Health
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: expense-assistant-db
+          property: connectionString
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_BASE_URL
