@@ -931,7 +931,7 @@
       <section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" aria-describedby="auth-description" tabindex="-1">
         <div class="auth-card-header">
           <div><span class="auth-eyebrow">YOUR MONEY, IN VIEW</span><h2 id="auth-modal-title">Welcome back.</h2><p id="auth-description">A little clarity for your everyday spending.</p></div>
-          <button type="button" class="button secondary small close-modal" aria-label="Close sign-in">✕</button>
+          <button type="button" class="button secondary small close-modal" aria-label="Close dialog">✕</button>
         </div>
         <div class="auth-tabs" aria-label="Account access">
           <button type="button" class="auth-tab active" data-tab="login" aria-pressed="true">Sign in</button>
@@ -940,32 +940,45 @@
         <div class="auth-body">
           <p id="auth-error" class="auth-error" role="alert" hidden></p>
           <form id="auth-login-form" class="auth-form" novalidate>
-            <label for="login-email">Email address</label>
-            <input type="email" id="login-email" autocomplete="username" required placeholder="you@example.com">
-            <label for="login-password">Password</label>
-            <div class="password-field-wrapper">
-              <input type="password" id="login-password" autocomplete="current-password" required placeholder="Enter your password">
-              <button type="button" class="password-toggle" aria-label="Show password">
-                <svg class="eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg class="eye-closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
-              </button>
+            <div class="auth-field">
+              <label for="login-email">Email address</label>
+              <input type="email" id="login-email" autocomplete="username" required placeholder="you@example.com">
             </div>
-            <button type="submit" class="button primary">Sign in →</button>
+            <div class="auth-field">
+              <label for="login-password">Password</label>
+              <div class="password-field-wrapper">
+                <input type="password" id="login-password" autocomplete="current-password" required placeholder="Enter your password">
+                <button type="button" class="password-toggle" aria-label="Show password">
+                  <svg class="eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="eye-closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="button primary auth-submit-btn">Sign in →</button>
           </form>
           <form id="auth-signup-form" class="auth-form" hidden novalidate>
-            <label for="signup-username">Your name</label>
-            <input id="signup-username" autocomplete="name" required placeholder="How should we call you?">
-            <label for="signup-email">Email address</label>
-            <input type="email" id="signup-email" autocomplete="email" required placeholder="you@example.com">
-            <label for="signup-password">Password</label>
-            <div class="password-field-wrapper">
-              <input type="password" id="signup-password" autocomplete="new-password" required placeholder="Create a password (min. 6 characters)">
-              <button type="button" class="password-toggle" aria-label="Show password">
-                <svg class="eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg class="eye-closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
-              </button>
+            <div class="auth-field">
+              <label for="signup-username">Your name</label>
+              <input id="signup-username" autocomplete="name" required placeholder="How should we call you?">
             </div>
-            <button type="submit" class="button primary">Create account →</button>
+            <div class="auth-field">
+              <label for="signup-email">Email address</label>
+              <input type="email" id="signup-email" autocomplete="email" required placeholder="you@example.com">
+            </div>
+            <div class="auth-field">
+              <div class="auth-field-header">
+                <label for="signup-password">Password</label>
+                <span id="signup-password-hint" class="auth-field-hint">Min. 6 characters</span>
+              </div>
+              <div class="password-field-wrapper">
+                <input type="password" id="signup-password" autocomplete="new-password" required placeholder="Create a password" aria-describedby="signup-password-hint">
+                <button type="button" class="password-toggle" aria-label="Show password">
+                  <svg class="eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="eye-closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="button primary auth-submit-btn">Create account →</button>
           </form>
           <p class="auth-footnote">Your expenses. Your own space.</p>
         </div>
