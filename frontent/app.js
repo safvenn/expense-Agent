@@ -520,16 +520,28 @@
       }
     }
     if ($('#connection-form button')) $('#connection-form button').disabled = authPending;
+    updateSendButton();
 
     requestAnimationFrame(() => {
       host.scrollTop = host.scrollHeight;
     });
   }
 
+  function updateSendButton() {
+    const input = $('#message');
+    const sendBtn = $('.send-button');
+    if (!input || !sendBtn) return;
+    const hasText = Boolean(input.value && input.value.trim().length > 0);
+    const canSend = hasText && !busy && !state.pending && !state.uncertain;
+    sendBtn.disabled = !canSend;
+    sendBtn.classList.toggle('active', canSend);
+  }
+
   function autoResizeTextarea(el) {
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+    const computed = Math.min(Math.max(el.scrollHeight, 28), 160);
+    el.style.height = computed + 'px';
   }
 
   async function mutate(path, options) {
@@ -588,6 +600,7 @@
       state.messages.push({ role: 'user', text: prompt });
       $('#message').value = '';
       autoResizeTextarea($('#message'));
+      updateSendButton();
       await mutate('/chat?' + new URLSearchParams({ prompt }), { method: 'POST' });
     });
 
@@ -622,6 +635,7 @@
         if (input) {
           input.value = recognitionBase ? recognitionBase + (additions ? ' ' + additions : '') : additions;
           autoResizeTextarea(input);
+          updateSendButton();
         }
       });
       speechRecognition.addEventListener('end', () => {
@@ -663,11 +677,26 @@
     $('#message').addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
         event.preventDefault();
-        $('#chat-form').requestSubmit();
+        const prompt = $('#message').value.trim();
+        if (prompt && !busy && !state.pending && !state.uncertain) {
+          $('#chat-form').requestSubmit();
+        }
+      } else if (event.key === 'Escape') {
+        $('#message').blur();
       }
     });
     $('#message').addEventListener('input', () => {
       autoResizeTextarea($('#message'));
+      updateSendButton();
+    });
+    $('#message').addEventListener('change', () => {
+      updateSendButton();
+    });
+    $('#message').addEventListener('focus', () => {
+      setTimeout(() => {
+        const host = $('#conversation');
+        if (host) host.scrollTo({ top: host.scrollHeight, behavior: 'smooth' });
+      }, 150);
     });
     renderChat();
   }

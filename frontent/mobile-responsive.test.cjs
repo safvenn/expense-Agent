@@ -21,8 +21,8 @@ test('all HTML entrypoints include viewport-fit=cover for mobile display notches
 test('all HTML entrypoints use consistent asset cache-busting queries', () => {
   for (const file of htmlFiles) {
     const content = fs.readFileSync(path.join(dir, file), 'utf8');
-    assert.match(content, /style\.css\?v=mic-1/, `${file} must reference style.css?v=mic-1`);
-    assert.match(content, /app\.js\?v=mic-1/, `${file} must reference app.js?v=mic-1`);
+    assert.match(content, /style\.css\?v=kbd-1/, `${file} must reference style.css?v=kbd-1`);
+    assert.match(content, /app\.js\?v=kbd-1/, `${file} must reference app.js?v=kbd-1`);
   }
 });
 
@@ -77,3 +77,66 @@ test('styles.css enforces 44x44px touch targets for mobile interactive controls'
   assert.match(cssSource, /\.chip-btn\s*\{[^}]*min-height:\s*44px/i);
   assert.match(cssSource, /\.auth-tab\s*\{[^}]*min-height:\s*44px/i);
 });
+
+test('removed verbose placeholder and old label text from all HTML files', () => {
+  for (const file of htmlFiles) {
+    const content = fs.readFileSync(path.join(dir, file), 'utf8');
+    assert.doesNotMatch(
+      content,
+      /Tell me about an expense \(e\.g\. 'Spent ₹250 on Biriyani for lunch'\)\.\.\./i,
+      `${file} must NOT contain the verbose old expense placeholder`
+    );
+    assert.doesNotMatch(
+      content,
+      /Message the expense assistant/i,
+      `${file} must NOT contain the old "Message the expense assistant" label`
+    );
+  }
+});
+
+test('chat textarea includes mobile virtual keyboard optimization attributes', () => {
+  const chatFiles = ['index.html', 'expense-assistant.html'];
+  for (const file of chatFiles) {
+    const content = fs.readFileSync(path.join(dir, file), 'utf8');
+    assert.match(
+      content,
+      /<textarea[^>]*enterkeyhint=["']send["']/i,
+      `${file} textarea must have enterkeyhint="send" for mobile virtual keyboard action button`
+    );
+    assert.match(
+      content,
+      /<textarea[^>]*inputmode=["']text["']/i,
+      `${file} textarea must have inputmode="text"`
+    );
+    assert.match(
+      content,
+      /<textarea[^>]*autocapitalize=["']sentences["']/i,
+      `${file} textarea must have autocapitalize="sentences"`
+    );
+  }
+});
+
+test('viewport meta tag includes interactive-widget=resizes-content for mobile keyboards', () => {
+  for (const file of htmlFiles) {
+    const content = fs.readFileSync(path.join(dir, file), 'utf8');
+    assert.match(
+      content,
+      /<meta\s+name=["']viewport["']\s+content=["'][^"']*interactive-widget=resizes-content[^"']*["']>/i,
+      `${file} viewport must include interactive-widget=resizes-content`
+    );
+  }
+});
+
+test('composer styles include modern keyboard kbd badge and dynamic active send button', () => {
+  assert.match(
+    cssSource,
+    /\.composer-hint\s+kbd\b/i,
+    'styles.css must style keyboard shortcut <kbd> tags'
+  );
+  assert.match(
+    cssSource,
+    /\.send-button\.active|\.send-button:not\(:disabled\)/i,
+    'styles.css must have active send button states'
+  );
+});
+

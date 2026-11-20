@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Chat · Expense Assistant</title>
-  <link rel="stylesheet" href="/style.css?v=mic-1">
+  <link rel="stylesheet" href="/style.css?v=kbd-1">
 </head>
 <body>
 <aside class="sidebar">
@@ -61,10 +61,10 @@
 
   <div class="composer-area">
     <form class="composer" id="chat-form">
-      <label class="sr-only" for="message">Message the expense assistant</label>
-      <textarea id="message" rows="1" placeholder="Tell me about an expense (e.g. 'Spent ₹250 on Biriyani for lunch')..."></textarea>
+      <label class="sr-only" for="message">Type your message or expense</label>
+      <textarea id="message" rows="1" placeholder="Ask anything or log an expense..." enterkeyhint="send" inputmode="text" autocapitalize="sentences" autocomplete="off" spellcheck="true"></textarea>
       <div class="composer-bottom">
-        <span class="composer-hint">Press Enter to send · Shift + Enter for a new line</span>
+        <span class="composer-hint"><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for line</span>
         <div class="composer-actions">
           <button class="mic-button" id="mic-button" type="button" aria-label="Start microphone input" aria-pressed="false" title="Use microphone">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -74,7 +74,7 @@
               <line x1="8" y1="22" x2="16" y2="22"></line>
             </svg>
           </button>
-          <button class="send-button" type="submit" aria-label="Send message" title="Send message">
+          <button class="send-button" type="submit" aria-label="Send message" title="Send message" disabled>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="12" y1="19" x2="12" y2="5"></line>
               <polyline points="5 12 12 5 19 12"></polyline>
@@ -88,6 +88,6 @@
 </main>
 
 <script src="/response.js"></script>
-<script src="/app.js?v=mic-1"></script>
+<script src="/app.js?v=kbd-1"></script>
 </body>
 </html>
