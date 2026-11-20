@@ -879,6 +879,22 @@
     if (Array.isArray(data?.detail)) return data.detail.map(item => item.msg).join('; ');
     return data?.message || fallback;
   }
+  function validateAuthInput(mode, { username = '', email = '', password = '' } = {}) {
+    const cleanEmail = (email || '').trim();
+    const cleanName = (username || '').trim();
+    if (mode === 'signup') {
+      if (!cleanName) return 'Enter your name.';
+      if (!cleanEmail) return 'Enter your email address.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return 'Enter a valid email address.';
+      if (!password) return 'Create a password.';
+      if (password.length < 6) return 'Password must be at least 6 characters.';
+    } else {
+      if (!cleanEmail) return 'Enter your email address.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return 'Enter a valid email address.';
+      if (!password) return 'Enter your password.';
+    }
+    return null;
+  }
   async function authRequest(path, body) {
     const res = await fetch(base + path, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -893,6 +909,20 @@
     if (typeof data.access_token !== 'string' || !data.access_token.trim()) throw new Error('Sign-in returned no session. Please try again.');
     saveAuth({ access_token: data.access_token, refresh_token: data.refresh_token,
       username: data.user?.username || displayName, email: data.user?.email || email });
+  }
+  function resetPasswordFields(root = $('#auth-modal')) {
+    if (!root) return;
+    root.querySelectorAll('.password-field-wrapper input').forEach(input => {
+      input.type = 'password';
+      input.value = '';
+    });
+    root.querySelectorAll('.password-toggle').forEach(btn => {
+      btn.setAttribute('aria-label', 'Show password');
+      const eyeOpen = btn.querySelector('.eye-open');
+      const eyeClosed = btn.querySelector('.eye-closed');
+      if (eyeOpen) eyeOpen.hidden = false;
+      if (eyeClosed) eyeClosed.hidden = true;
+    });
   }
   function buildAuthModal() {
     const modal = node('div', undefined, 'auth-modal-backdrop');
@@ -909,27 +939,64 @@
         </div>
         <div class="auth-body">
           <p id="auth-error" class="auth-error" role="alert" hidden></p>
-          <form id="auth-login-form" class="auth-form">
-            <label>Email address<input type="email" id="login-email" autocomplete="username" required placeholder="you@example.com"></label>
-            <label>Password<input type="password" id="login-password" autocomplete="current-password" required placeholder="Enter your password"></label>
+          <form id="auth-login-form" class="auth-form" novalidate>
+            <label for="login-email">Email address</label>
+            <input type="email" id="login-email" autocomplete="username" required placeholder="you@example.com">
+            <label for="login-password">Password</label>
+            <div class="password-field-wrapper">
+              <input type="password" id="login-password" autocomplete="current-password" required placeholder="Enter your password">
+              <button type="button" class="password-toggle" aria-label="Show password">
+                <svg class="eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
             <button type="submit" class="button primary">Sign in →</button>
           </form>
-          <form id="auth-signup-form" class="auth-form" hidden>
-            <label>Your name<input id="signup-username" autocomplete="nickname" required placeholder="How should we call you?"></label>
-            <label>Email address<input type="email" id="signup-email" autocomplete="email" required placeholder="you@example.com"></label>
-            <label>Password<input type="password" id="signup-password" autocomplete="new-password" required placeholder="Create a password"></label>
+          <form id="auth-signup-form" class="auth-form" hidden novalidate>
+            <label for="signup-username">Your name</label>
+            <input id="signup-username" autocomplete="name" required placeholder="How should we call you?">
+            <label for="signup-email">Email address</label>
+            <input type="email" id="signup-email" autocomplete="email" required placeholder="you@example.com">
+            <label for="signup-password">Password</label>
+            <div class="password-field-wrapper">
+              <input type="password" id="signup-password" autocomplete="new-password" required placeholder="Create a password (min. 6 characters)">
+              <button type="button" class="password-toggle" aria-label="Show password">
+                <svg class="eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="eye-closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
             <button type="submit" class="button primary">Create account →</button>
           </form>
           <p class="auth-footnote">Your expenses. Your own space.</p>
         </div>
       </section>`;
     document.body.append(modal);
+
+    modal.querySelectorAll('.password-toggle').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        const wrapper = btn.closest('.password-field-wrapper');
+        const input = wrapper?.querySelector('input');
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        const eyeOpen = btn.querySelector('.eye-open');
+        const eyeClosed = btn.querySelector('.eye-closed');
+        if (eyeOpen) eyeOpen.hidden = isPassword;
+        if (eyeClosed) eyeClosed.hidden = !isPassword;
+        input.focus();
+      });
+    });
+
     modal.querySelectorAll('.auth-tab').forEach(tab => tab.addEventListener('click', () => {
       modal.querySelectorAll('.auth-tab').forEach(t => { t.classList.toggle('active', t === tab); t.setAttribute('aria-pressed', String(t === tab)); });
       const signup = tab.dataset.tab === 'signup';
       $('#auth-login-form').hidden = signup; $('#auth-signup-form').hidden = !signup;
       $('#auth-modal-title').textContent = signup ? 'Make room for clarity.' : 'Welcome back.';
       $('#auth-error').hidden = true;
+      $('#auth-error').textContent = '';
+      resetPasswordFields(modal);
       modal.querySelector('form:not([hidden]) input').focus();
     }));
     modal.querySelector('.close-modal').addEventListener('click', closeAuthModal);
@@ -950,7 +1017,22 @@
         const password = $('#' + mode + '-password').value;
         const username = mode === 'signup' ? $('#signup-username').value.trim() : email;
         error.hidden = true;
-        if (!username) { error.textContent = 'Enter your name.'; error.hidden = false; return; }
+
+        const validationErr = validateAuthInput(mode, { username, email, password });
+        if (validationErr) {
+          error.textContent = validationErr;
+          error.hidden = false;
+          if (mode === 'signup') {
+            if (!username) $('#signup-username').focus();
+            else if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) $('#signup-email').focus();
+            else $('#signup-password').focus();
+          } else {
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) $('#login-email').focus();
+            else $('#login-password').focus();
+          }
+          return;
+        }
+
         authPending = true; let created = false, success = false;
         const submit = form.querySelector('[type=submit]'), label = submit.textContent;
         submit.textContent = mode === 'signup' ? 'Creating account…' : 'Signing in…';
@@ -968,7 +1050,7 @@
           modal.querySelectorAll('button, input').forEach(el => el.disabled = false);
           submit.textContent = label;
         }
-        if (success) { form.reset(); closeAuthModal(); loadExpenses(); loadMessages(); }
+        if (success) { form.reset(); resetPasswordFields(modal); closeAuthModal(); loadExpenses(); loadMessages(); }
         else if (created) {
           modal.querySelector('[data-tab=login]').click();
           $('#login-email').value = email;
@@ -988,7 +1070,7 @@
   function closeAuthModal() {
     if (authPending) return;
     $('#auth-modal').hidden = true; document.body.classList.remove('auth-open');
-    $('#auth-modal').querySelectorAll('input[type=password]').forEach(input => input.value = '');
+    resetPasswordFields($('#auth-modal'));
     authReturnFocus?.focus();
   }
   function updateAuthUI() {

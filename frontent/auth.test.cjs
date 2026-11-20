@@ -26,6 +26,55 @@ test('duplicate registration surfaces server message',async()=>{
 test('validation errors are readable',()=>{
  const run=setup([]);assert.equal(run.ctx.extractError({detail:[{msg:'Invalid email'}]}),'Invalid email');
 });
+test('login input validation catches empty email, invalid email, and empty password',()=>{
+ const run=setup([]);
+ assert.equal(run.ctx.validateAuthInput('login',{email:'',password:''}),'Enter your email address.');
+ assert.equal(run.ctx.validateAuthInput('login',{email:'not-an-email',password:'123456'}),'Enter a valid email address.');
+ assert.equal(run.ctx.validateAuthInput('login',{email:'user@example.com',password:''}),'Enter your password.');
+ assert.equal(run.ctx.validateAuthInput('login',{email:'user@example.com',password:'secret'}),null);
+});
+test('signup input validation catches missing name, missing/invalid email, and password length',()=>{
+ const run=setup([]);
+ assert.equal(run.ctx.validateAuthInput('signup',{username:'',email:'user@example.com',password:'secret123'}),'Enter your name.');
+ assert.equal(run.ctx.validateAuthInput('signup',{username:'Alex',email:'',password:'secret123'}),'Enter your email address.');
+ assert.equal(run.ctx.validateAuthInput('signup',{username:'Alex',email:'bad-email',password:'secret123'}),'Enter a valid email address.');
+ assert.equal(run.ctx.validateAuthInput('signup',{username:'Alex',email:'alex@example.com',password:''}),'Create a password.');
+ assert.equal(run.ctx.validateAuthInput('signup',{username:'Alex',email:'alex@example.com',password:'12345'}),'Password must be at least 6 characters.');
+ assert.equal(run.ctx.validateAuthInput('signup',{username:'Alex',email:'alex@example.com',password:'123456'}),null);
+});
+test('auth modal template contains standard autocomplete=name and password visibility controls',()=>{
+ assert.match(source,/autocomplete="name"/);
+ assert.doesNotMatch(source,/autocomplete="nickname"/);
+ assert.match(source,/class="password-field-wrapper"/);
+ assert.match(source,/class="password-toggle"/);
+ assert.doesNotMatch(source,/<button[^>]*class="password-toggle"[^>]*tabindex="-1"/);
+ assert.match(source,/<label for="login-password">Password<\/label>/);
+ assert.match(source,/<label for="signup-password">Password<\/label>/);
+
+ const css = fs.readFileSync(__dirname + '/styles.css', 'utf8');
+ assert.match(css, /\.password-toggle\s+svg\[hidden\]\s*\{\s*display:\s*none;\s*\}/);
+});
+test('resetPasswordFields restores password type, empties values, and resets toggle labels',()=>{
+ const run=setup([]);
+ const fakeInputs = [{ type: 'text', value: 'secret' }, { type: 'text', value: 'another' }];
+ const fakeSvgs = [{ hidden: true }, { hidden: false }];
+ const fakeToggles = [{
+   labels: {},
+   setAttribute: (k, v) => fakeToggles[0].labels[k] = v,
+   querySelector: sel => sel === '.eye-open' ? fakeSvgs[0] : fakeSvgs[1]
+ }];
+ const fakeRoot = {
+   querySelectorAll: sel => sel === '.password-field-wrapper input' ? fakeInputs : fakeToggles
+ };
+ run.ctx.resetPasswordFields(fakeRoot);
+ assert.equal(fakeInputs[0].type, 'password');
+ assert.equal(fakeInputs[0].value, '');
+ assert.equal(fakeInputs[1].type, 'password');
+ assert.equal(fakeInputs[1].value, '');
+ assert.equal(fakeToggles[0].labels['aria-label'], 'Show password');
+ assert.equal(fakeSvgs[0].hidden, false);
+ assert.equal(fakeSvgs[1].hidden, true);
+});
 test('successful token refresh does not hide a retried server error as HTTP 401',async()=>{
  const apiSource=source.slice(source.indexOf('  async function api('),source.indexOf('  function markdownToHtml('));
  let count=0;const ctx={base:'http://localhost:8000',auth:{access_token:'old',refresh_token:'refresh'},AbortSignal,saveAuth:()=>{},openAuthModal:()=>assert.fail('must not report auth failure'),fetch:async(url)=>{

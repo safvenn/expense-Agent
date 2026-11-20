@@ -1260,6 +1260,46 @@ body.auth-open { overflow: hidden; }
   transition: border-color .2s, box-shadow .2s;
 }
 .auth-form input:focus { border-color: var(--green); box-shadow: 0 0 0 4px #15966a12; }
+.password-field-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.password-field-wrapper input {
+  padding-right: 48px;
+}
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  background: transparent;
+  border: 0;
+  padding: 8px;
+  cursor: pointer;
+  color: #60776a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  transition: color .2s, background-color .2s;
+}
+.password-toggle:hover {
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.05);
+}
+.password-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+.password-toggle svg {
+  display: block;
+  pointer-events: none;
+}
+.password-toggle svg[hidden] {
+  display: none;
+}
 .auth-form .button { min-height: 46px; border-radius: 10px; margin-top: 4px; }
 .auth-error {
   font-size: 12px;
