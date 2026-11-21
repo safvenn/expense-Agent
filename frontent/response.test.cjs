@@ -53,3 +53,14 @@ test('saved legacy interrupt recovers without resending expense',()=>{
  vm.runInNewContext(recovery,{state,base:'http://localhost:8000',parseChatResponse:parse,persist:()=>{}});
  assert.equal(state.uncertain,false);assert.equal(state.thread,'existing-thread');assert.deepEqual(state.pending,interrupt);
 });
+test('unwraps nested content and assistant_response objects returned by /approve',()=>{
+ assert.deepEqual(parse({content:{content:'Expense added successfully'}}),{text:'Expense added successfully'});
+ assert.deepEqual(parse({content:{assistant_response:'Expense 5 deleted'}}),{text:'Expense 5 deleted'});
+ assert.deepEqual(parse({message:'Action processed.'}),{text:'Action processed.'});
+ assert.deepEqual(parse({content:{message:'Action approved.'}}),{text:'Action approved.'});
+});
+test('normalizes Tool_name, intterupt_id, and stringified args in interrupt responses',()=>{
+ const raw={intterupt_id:'int-123',Tool_name:'delete_expense',args:JSON.stringify({expense_id:5}),allowed_decisions:['approve','reject']};
+ const expected={id:'int-123',name:'delete_expense',args:{expense_id:5},description:undefined,allowed_decisions:['approve','reject']};
+ assert.deepEqual(parse(raw),{pending:expected});
+});

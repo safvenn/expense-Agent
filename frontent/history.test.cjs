@@ -58,3 +58,87 @@ test('approval reply renders before a slow history request completes',async()=>{
  const job=ctx.mutate('/approve',{});await new Promise(r=>setImmediate(r));
  assert.ok(renders.includes('Expense added.'));assert.equal(ctx.busy,true);release();await job;assert.equal(ctx.busy,false);
 });
+test('tool message saved by backend with wrapped content {content: {action_requests: [...]}} unwraps properly in history',async()=>{
+ const c=setup(async()=>({messages:[
+  {id:2,role:'tool',content:{content:{action_requests:[{name:'delete_expense',args:{expense_id:5}}]}}},
+  {id:1,role:'user',content:'Delete expense 5'}
+ ]}));
+ await c.loadMessages();
+ assert.equal(c.state.messages.length,2);
+ assert.equal(c.state.messages[1].role,'tool');
+ assert.equal(c.state.messages[1].text,'Tool requested: delete_expense');
+});
+test('tool message with stringified wrapper content unwraps and preserves tool name',async()=>{
+ const c=setup(async()=>({messages:[
+  {id:2,role:'tool',content:JSON.stringify({content:{action_requests:[{Tool_name:'edit_expense'}]}})},
+  {id:1,role:'user',content:'Change amount to 500'}
+ ]}));
+ await c.loadMessages();
+ assert.equal(c.state.messages.length,2);
+ assert.equal(c.state.messages[1].role,'tool');
+ assert.equal(c.state.messages[1].text,'Tool requested: edit_expense');
+});
+test('decide(true) succeeds even when uncertain was set, sending interrupt_id and approve: true',async()=>{
+ let sentPath='',sentBody=null;
+ const decideFn=source.slice(source.indexOf('  async function decide('),source.indexOf('  if ($(\'#chat-form\'))'));
+ const ctx={
+  busy:false,
+  state:{thread:'user-1',pending:{id:'int-99',name:'delete_expense',allowed_decisions:['approve','reject']},uncertain:true},
+  mutate:async(path,opts)=>{sentPath=path;sentBody=JSON.parse(opts.body);ctx.state.uncertain=false;}
+ };
+ vm.createContext(ctx);
+ vm.runInContext(decideFn,ctx);
+ await ctx.decide(true);
+ assert.equal(sentPath,'/approve');
+ assert.equal(sentBody.thread_id,'user-1');
+ assert.equal(sentBody.interrupt_id,'int-99');
+ assert.equal(sentBody.approve,true);
+ assert.equal(sentBody.message,undefined);
+});
+test('decide(false) sends rejection message to /approve',async()=>{
+ let sentPath='',sentBody=null;
+ const decideFn=source.slice(source.indexOf('  async function decide('),source.indexOf('  if ($(\'#chat-form\'))'));
+ const ctx={
+  busy:false,
+  state:{thread:'user-1',pending:{id:'int-100',name:'delete_expense',allowed_decisions:['approve','reject']},uncertain:false},
+  mutate:async(path,opts)=>{sentPath=path;sentBody=JSON.parse(opts.body);}
+ };
+ vm.createContext(ctx);
+ vm.runInContext(decideFn,ctx);
+ await ctx.decide(false,'Keep this expense');
+ assert.equal(sentPath,'/approve');
+ assert.equal(sentBody.interrupt_id,'int-100');
+ assert.equal(sentBody.approve,false);
+ assert.equal(sentBody.message,'Keep this expense');
+});
+test('full mutate(/approve) flow clears pending interrupt and invokes loadExpenses',async()=>{
+ let expensesLoaded=false;
+ const mutateAndDecide=source.slice(source.indexOf('  async function mutate('),source.indexOf('  if ($(\'#chat-form\'))'));
+ const parseFn=require('./response.js');
+ const ctx={
+  historyVersion:0,
+  busy:false,
+  base:'http://localhost:8000',
+  parseChatResponse:parseFn,
+  state:{thread:'user-1',messages:[],pending:{id:'int-101',name:'edit_expense',allowed_decisions:['approve','reject']},uncertain:true,diagnostic:null},
+  persist:()=>{},
+  renderChat:()=>{},
+  loadMessages:async()=>{},
+  loadExpenses:async()=>{expensesLoaded=true;},
+  api:async()=>({content:'Expense edited successfully.'})
+ };
+ ctx.accept=(data)=>{
+  const res=parseFn(data);
+  ctx.state.pending=res.pending||null;
+  if(res.text)ctx.state.messages.push({role:'assistant',text:res.text});
+  ctx.state.uncertain=false;
+ };
+ vm.createContext(ctx);
+ vm.runInContext(mutateAndDecide,ctx);
+ await ctx.decide(true);
+ assert.equal(ctx.state.pending,null);
+ assert.equal(ctx.state.uncertain,false);
+ assert.equal(ctx.state.messages[0].text,'Expense edited successfully.');
+ assert.equal(expensesLoaded,true);
+ assert.equal(ctx.busy,false);
+});

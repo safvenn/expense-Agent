@@ -414,8 +414,14 @@
       heading.append(node('span', 'Waiting', 'status waiting'));
       card.append(heading);
 
+      let argsObj = p.args || {};
+      if (typeof argsObj === 'string') {
+        try { argsObj = JSON.parse(argsObj); } catch { argsObj = { details: argsObj }; }
+      }
+      if (!argsObj || typeof argsObj !== 'object') argsObj = {};
+
       const details = node('dl', undefined, 'expense-details');
-      for (const [key, value] of Object.entries(p.args || {})) {
+      for (const [key, value] of Object.entries(argsObj)) {
         const row = node('div');
         const isAmount = key.toLowerCase().includes('amount') || key.toLowerCase().includes('ammount');
         const displayValue = isAmount && typeof value === 'number' ? money(value) : (typeof value === 'object' ? JSON.stringify(value) : String(value));
@@ -425,7 +431,7 @@
       card.append(details);
 
       const tool = node('details', undefined, 'tool-details');
-      tool.append(node('summary', 'View tool details'), node('pre', JSON.stringify({ name: p.name, args: p.args }, null, 2)));
+      tool.append(node('summary', 'View tool details'), node('pre', JSON.stringify({ name: p.name, args: argsObj }, null, 2)));
       card.append(tool);
 
       card.append(node('p', 'Your API applies this decision to pending actions. Submit one expense at a time to review each individually.', 'batch-notice'));
@@ -434,9 +440,9 @@
 
       // Approval Button
       if (p.allowed_decisions.includes('approve')) {
-        const approveBtn = node('button', '✓ Approve all pending actions', 'button primary');
+        const approveBtn = node('button', busy ? '✓ Approving actions…' : '✓ Approve all pending actions', 'button primary' + (busy ? ' is-loading' : ''));
         approveBtn.type = 'button';
-        approveBtn.disabled = busy || state.uncertain;
+        approveBtn.disabled = busy;
         approveBtn.addEventListener('click', () => decide(true));
         actions.append(approveBtn);
       }
@@ -452,7 +458,7 @@
         rejectInput.className = 'rejection-textarea';
         rejectInput.rows = 2;
         rejectInput.placeholder = "Tell the assistant why (e.g. 'Amount is wrong, it was ₹150', 'Cancel this expense')...";
-        rejectInput.disabled = busy || state.uncertain;
+        rejectInput.disabled = busy;
         rejectSec.append(rejectInput);
 
         const chips = node('div', undefined, 'rejection-chips');
@@ -465,7 +471,7 @@
         for (const [label, text] of presets) {
           const chip = node('button', label, 'chip-btn');
           chip.type = 'button';
-          chip.disabled = busy || state.uncertain;
+          chip.disabled = busy;
           chip.addEventListener('click', () => {
             rejectInput.value = text;
             rejectInput.focus();
@@ -477,7 +483,7 @@
         const rejectActs = node('div', undefined, 'rejection-actions');
         const rejectBtn = node('button', '✕ Reject action with message', 'button secondary danger');
         rejectBtn.type = 'button';
-        rejectBtn.disabled = busy || state.uncertain;
+        rejectBtn.disabled = busy;
         rejectBtn.addEventListener('click', () => {
           decide(false, rejectInput.value);
         });
@@ -540,8 +546,7 @@
   function autoResizeTextarea(el) {
     if (!el) return;
     el.style.height = 'auto';
-    const computed = Math.min(Math.max(el.scrollHeight, 28), 160);
-    el.style.height = computed + 'px';
+    el.style.height = Math.min(el.scrollHeight, 180) + 'px';
   }
 
   async function mutate(path, options) {
@@ -573,19 +578,24 @@
     } finally {
       await loadMessages();
       busy = false;
+      try {
+        if (typeof loadExpenses === 'function') await loadExpenses();
+      } catch { /* ignore if not on expense view */ }
       if (current()) renderChat();
     }
   }
 
   async function decide(approve, rejectionMessage = '') {
-    if (busy || !state.pending || state.uncertain) return;
+    if (busy || !state.pending) return;
+    state.uncertain = false;
+    const interruptId = state.pending.id ?? state.pending.interrupt_id ?? state.pending.intterupt_id ?? null;
     const message = approve ? null : (rejectionMessage.trim() || 'User denied this action. Do not retry.');
     await mutate('/approve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         thread_id: state.thread,
-        interrupt_id: state.pending.id,
+        interrupt_id: interruptId,
         approve: Boolean(approve),
         ...(approve ? {} : { message: message })
       })
@@ -635,7 +645,6 @@
         if (input) {
           input.value = recognitionBase ? recognitionBase + (additions ? ' ' + additions : '') : additions;
           autoResizeTextarea(input);
-          updateSendButton();
         }
       });
       speechRecognition.addEventListener('end', () => {
@@ -677,26 +686,12 @@
     $('#message').addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
         event.preventDefault();
-        const prompt = $('#message').value.trim();
-        if (prompt && !busy && !state.pending && !state.uncertain) {
-          $('#chat-form').requestSubmit();
-        }
-      } else if (event.key === 'Escape') {
-        $('#message').blur();
+        $('#chat-form').requestSubmit();
       }
     });
     $('#message').addEventListener('input', () => {
       autoResizeTextarea($('#message'));
       updateSendButton();
-    });
-    $('#message').addEventListener('change', () => {
-      updateSendButton();
-    });
-    $('#message').addEventListener('focus', () => {
-      setTimeout(() => {
-        const host = $('#conversation');
-        if (host) host.scrollTo({ top: host.scrollHeight, behavior: 'smooth' });
-      }, 150);
     });
     renderChat();
   }
@@ -818,9 +813,16 @@
             if (typeof tool === 'string') {
               try { tool = JSON.parse(tool); } catch { tool = null; }
             }
+            if (tool && typeof tool === 'object' && tool.content) {
+              let inner = tool.content;
+              if (typeof inner === 'string') {
+                try { inner = JSON.parse(inner); } catch { /* keep inner */ }
+              }
+              if (inner && typeof inner === 'object') tool = inner;
+            }
             const requests = Array.isArray(tool?.action_requests) ? tool.action_requests : [];
-            const names = requests.map(action => action?.name).filter(name => typeof name === 'string' && name.trim());
-            const name = tool?.name || message.name;
+            const names = requests.map(action => action?.name || action?.Tool_name || action?.tool_name).filter(name => typeof name === 'string' && name.trim());
+            const name = tool?.name || tool?.Tool_name || tool?.tool_name || message.name;
             const text = names.length ? 'Tool requested: ' + names.join(', ')
               : typeof name === 'string' && name.trim() ? 'Tool: ' + name : '';
             return { id: message.id, role: 'tool', text, date: message.date };
@@ -960,7 +962,7 @@
       <section class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" aria-describedby="auth-description" tabindex="-1">
         <div class="auth-card-header">
           <div><span class="auth-eyebrow">YOUR MONEY, IN VIEW</span><h2 id="auth-modal-title">Welcome back.</h2><p id="auth-description">A little clarity for your everyday spending.</p></div>
-          <button type="button" class="button secondary small close-modal" aria-label="Close dialog">✕</button>
+          <button type="button" class="button secondary small close-modal" aria-label="Close sign-in">✕</button>
         </div>
         <div class="auth-tabs" aria-label="Account access">
           <button type="button" class="auth-tab active" data-tab="login" aria-pressed="true">Sign in</button>
@@ -997,10 +999,10 @@
             <div class="auth-field">
               <div class="auth-field-header">
                 <label for="signup-password">Password</label>
-                <span id="signup-password-hint" class="auth-field-hint">Min. 6 characters</span>
+                <span class="auth-field-hint">Min. 6 characters</span>
               </div>
               <div class="password-field-wrapper">
-                <input type="password" id="signup-password" autocomplete="new-password" required placeholder="Create a password" aria-describedby="signup-password-hint">
+                <input type="password" id="signup-password" autocomplete="new-password" required placeholder="Create a password">
                 <button type="button" class="password-toggle" aria-label="Show password">
                   <svg class="eye-open" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                   <svg class="eye-closed" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
