@@ -475,15 +475,6 @@ h1 {
   font-weight: 700;
   color: var(--green);
 }
-.batch-notice {
-  margin: 0 20px 14px;
-  padding: 8px 12px;
-  background: #fdfaf3;
-  border-left: 3px solid var(--amber);
-  border-radius: 0 6px 6px 0;
-  color: #8c5b16;
-  font-size: 11.5px;
-}
 .tool-details { margin: 0 20px 14px; font-size: 11px; color: var(--muted); }
 .tool-details summary { cursor: pointer; font-weight: 600; }
 .tool-details pre {
@@ -1101,7 +1092,7 @@ tfoot td { background: #fbfdfb; border: 0; color: var(--muted); font-size: 11.5p
     padding: 12px 14px;
   }
   .expense-details .amount { font-size: 17px; }
-  .batch-notice, .tool-details { margin: 0 12px 10px; }
+  .tool-details { margin: 0 12px 10px; }
   .approval-actions {
     padding: 12px 14px;
     gap: 10px;

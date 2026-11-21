@@ -177,3 +177,11 @@ test('in-flight approval action shows applying status without false uncertain er
  assert.match(source,/Applying your decision…/);
  assert.match(source,/state\.uncertain\s*&&\s*!busy/);
 });
+test('approval card omits misleading batch-notice restriction warning and uses clean action labels',()=>{
+ assert.doesNotMatch(source,/Your API applies this decision to pending actions/);
+ assert.doesNotMatch(source,/batch-notice/);
+ assert.match(source,/✓ Approve deletion/);
+ assert.match(source,/✓ Approve update/);
+ assert.match(source,/✓ Approve expense/);
+ assert.match(source,/✓ Approve action/);
+});

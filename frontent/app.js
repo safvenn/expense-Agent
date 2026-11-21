@@ -441,13 +441,16 @@
       tool.append(node('summary', 'View tool details'), node('pre', JSON.stringify({ name: p.name, args: argsObj }, null, 2)));
       card.append(tool);
 
-      card.append(node('p', 'Your API applies this decision to pending actions. Submit one expense at a time to review each individually.', 'batch-notice'));
-
       const actions = node('div', undefined, 'approval-actions');
 
       // Approval Button
-      if (p.allowed_decisions.includes('approve')) {
-        const approveBtn = node('button', busy ? '✓ Approving actions…' : '✓ Approve all pending actions', 'button primary' + (busy ? ' is-loading' : ''));
+      const decisions = (p.allowed_decisions || ['approve', 'reject']).map(d => String(d).toLowerCase().trim());
+      if (decisions.includes('approve') || !decisions.length) {
+        const actionLabel = p.name === 'delete_expense' ? '✓ Approve deletion'
+          : p.name === 'edit_expense' ? '✓ Approve update'
+          : p.name === 'add_expense' ? '✓ Approve expense'
+          : '✓ Approve action';
+        const approveBtn = node('button', busy ? '✓ Approving…' : actionLabel, 'button primary' + (busy ? ' is-loading' : ''));
         approveBtn.type = 'button';
         approveBtn.disabled = busy;
         approveBtn.addEventListener('click', () => decide(true));
