@@ -38,12 +38,15 @@
   let microphoneStatus = '';
   let speechRecognition = null;
   let historyVersion = 0;
+  let mutationVersion = 0;
   let historyNotice = "";
   const persist = () => save('expense-chat', state);
 
   function saveAuth(value) {
     if (auth?.access_token !== value?.access_token) {
       historyVersion++;
+      mutationVersion++;
+      busy = false;
       state = fresh();
       persist();
       renderChat();
@@ -55,6 +58,8 @@
 
   function clearAuth() {
     historyVersion++;
+    mutationVersion++;
+    busy = false;
     state = fresh();
     persist();
     renderChat();
@@ -384,7 +389,9 @@
       item.append(body);
       host.append(item);
     }
-    if (busy) {
+    const lastMsg = state.messages[state.messages.length - 1];
+    const isWaitingForReply = busy && (!lastMsg || lastMsg.role === 'user') && !state.pending;
+    if (isWaitingForReply) {
       const thinkingItem = node('article', undefined, 'message assistant-message thinking-item');
       thinkingItem.append(node('div', '✦', 'assistant-avatar'));
       const body = node('div', undefined, 'message-content');
@@ -502,9 +509,11 @@
     if ($('#mic-button')) $('#mic-button').disabled = busy || !!state.pending || state.uncertain || !speechRecognition;
     if ($('#chat-status')) {
       $('#chat-status').replaceChildren();
-      if (busy) {
+      if (isWaitingForReply) {
         $('#chat-status').textContent = 'Waiting for the assistant…';
-      } else if (state.uncertain) {
+      } else if (busy && state.pending) {
+        $('#chat-status').textContent = 'Applying your decision…';
+      } else if (state.uncertain && !busy) {
         const text = node('span', 'Request outcome unknown. Check Expenses before retrying.');
         const unlockBtn = node('button', 'Unlock chat', 'button secondary small');
         unlockBtn.type = 'button';
@@ -512,6 +521,7 @@
         unlockBtn.style.padding = '2px 8px';
         unlockBtn.addEventListener('click', () => {
           state.uncertain = false;
+          busy = false;
           persist();
           renderChat();
           $('#message')?.focus();
@@ -550,10 +560,10 @@
   }
 
   async function mutate(path, options) {
-    const version = ++historyVersion;
+    const version = typeof mutationVersion !== 'undefined' ? ++mutationVersion : ++historyVersion;
     const targetBase = base;
     const targetState = state;
-    const current = () => version === historyVersion && base === targetBase && state === targetState;
+    const current = () => (typeof mutationVersion !== 'undefined' ? version === mutationVersion : version === historyVersion) && base === targetBase && state === targetState;
     busy = true;
     state.uncertain = true;
     state.diagnostic = null;

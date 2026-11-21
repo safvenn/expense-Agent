@@ -142,3 +142,38 @@ test('full mutate(/approve) flow clears pending interrupt and invokes loadExpens
  assert.equal(expensesLoaded,true);
  assert.equal(ctx.busy,false);
 });
+test('mutate re-renders with busy=false even when loadMessages increments historyVersion',async()=>{
+ const renders=[];
+ const mutateFn=source.slice(source.indexOf('  async function mutate('),source.indexOf('  async function decide('));
+ const ctx={
+  historyVersion:0,
+  mutationVersion:0,
+  busy:false,
+  base:'http://localhost:8000',
+  state:{messages:[{role:'user',text:'Hi'}]},
+  persist:()=>{},
+  renderChat:()=>renders.push(ctx.busy),
+  api:async()=>({content:'Hello user'}),
+  accept:data=>{
+   ctx.state.messages.push({role:'assistant',text:data.content});
+   ctx.state.uncertain=false;
+  },
+  loadMessages:async()=>{
+   ctx.historyVersion++;
+  }
+ };
+ vm.createContext(ctx);
+ vm.runInContext(mutateFn,ctx);
+ await ctx.mutate('/chat?prompt=Hi',{});
+ assert.equal(ctx.busy,false);
+ assert.equal(renders[renders.length-1],false,'final renderChat must be called with busy=false');
+});
+test('thinking-item is omitted when the latest message in chat is an assistant reply even while busy',()=>{
+ assert.match(source,/const\s+lastMsg\s*=\s*state\.messages\[state\.messages\.length\s*-\s*1\];/);
+ assert.match(source,/const\s+isWaitingForReply\s*=\s*busy\s*&&\s*\(!lastMsg\s*\|\|\s*lastMsg\.role\s*===\s*['"]user['"]\)\s*&&\s*!state\.pending;/);
+});
+test('in-flight approval action shows applying status without false uncertain error',()=>{
+ assert.match(source,/busy\s*&&\s*state\.pending/);
+ assert.match(source,/Applying your decision…/);
+ assert.match(source,/state\.uncertain\s*&&\s*!busy/);
+});
