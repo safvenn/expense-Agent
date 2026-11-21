@@ -184,4 +184,5 @@ test('approval card omits misleading batch-notice restriction warning and uses c
  assert.match(source,/✓ Approve update/);
  assert.match(source,/✓ Approve expense/);
  assert.match(source,/✓ Approve action/);
+ assert.match(source,/if\s*\(\s*decisions\.includes\(\s*['"]reject['"]\s*\)\s*\)/);
 });

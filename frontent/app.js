@@ -458,7 +458,7 @@
       }
 
       // Rejection Section with Message input
-      if (p.allowed_decisions.includes('reject')) {
+      if (decisions.includes('reject')) {
         const rejectSec = node('div', undefined, 'rejection-section');
         const rejectHead = node('div', undefined, 'rejection-header');
         rejectHead.textContent = 'Reject with feedback to assistant:';
